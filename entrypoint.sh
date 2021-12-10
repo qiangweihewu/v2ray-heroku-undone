@@ -4,11 +4,11 @@ if [[ -z "${UUID}" ]]; then
 fi
 
 if [[ -z "${AlterID}" ]]; then
-  AlterID="10"
+  AlterID="64"
 fi
 
 if [[ -z "${V2_Path}" ]]; then
-  V2_Path="/abcd321"
+  V2_Path="/"
 fi
 
 if [[ -z "${V2_QR_Path}" ]]; then
@@ -30,7 +30,7 @@ else
 fi
 
 mkdir /usr/bin/v2ray /etc/v2ray
-curl -L -H "Cache-Control: no-cache" -o /v2ray.zip https://github.com/v2ray/v2ray-core/releases/latest/download/v2ray-linux-64.zip
+curl -L -H "Cache-Control: no-cache" -o /v2ray.zip https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip
 touch /etc/v2ray/config.json
 unzip /v2ray.zip -d /usr/bin/v2ray
 rm -rf /v2ray.zip /usr/bin/v2ray/*.sig /usr/bin/v2ray/doc /usr/bin/v2ray/*.json /usr/bin/v2ray/*.dat /usr/bin/v2ray/sys*
@@ -74,7 +74,7 @@ cat <<-EOF > /etc/v2ray/vmess.json
     "v": "2",
     "ps": "${AppName}.herokuapp.com",
     "add": "${AppName}.herokuapp.com",
-    "port": "443",
+    "port": "2333",
     "id": "${UUID}",
     "aid": "${AlterID}",			
     "net": "ws",			
