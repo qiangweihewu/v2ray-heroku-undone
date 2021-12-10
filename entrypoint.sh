@@ -1,6 +1,6 @@
 #! /bin/bash
 if [[ -z "${UUID}" ]]; then
-  UUID="4890bd47-5180-4b1c-9a5d-3ef686543112"
+  UUID="d1ef5c24-0589-418d-d79d-447eef9671d6"
 fi
 
 if [[ -z "${AlterID}" ]]; then
@@ -8,11 +8,11 @@ if [[ -z "${AlterID}" ]]; then
 fi
 
 if [[ -z "${V2_Path}" ]]; then
-  V2_Path="/FreeApp"
+  V2_Path="/abcd321"
 fi
 
 if [[ -z "${V2_QR_Path}" ]]; then
-  V2_QR_Code="1234"
+  V2_QR_Code="12345"
 fi
 
 rm -rf /etc/localtime
@@ -29,42 +29,26 @@ else
   V_VER="v$VER"
 fi
 
-mkdir /v2raybin
-cd /v2raybin
-wget --no-check-certificate -qO 'v2ray.zip' "https://github.com/v2ray/v2ray-core/releases/download/$V_VER/v2ray-linux-$SYS_Bit.zip"
-unzip v2ray.zip
-rm -rf v2ray.zip
-chmod +x /v2raybin/v2ray-$V_VER-linux-$SYS_Bit/*
-
-C_VER=`wget -qO- "https://api.github.com/repos/mholt/caddy/releases/latest" | grep 'tag_name' | cut -d\" -f4`
-mkdir /caddybin
-cd /caddybin
-wget --no-check-certificate -qO 'caddy.tar.gz' "https://github.com/mholt/caddy/releases/download/$C_VER/caddy_$C_VER$BitVer"
-tar xvf caddy.tar.gz
-rm -rf caddy.tar.gz
-chmod +x caddy
-cd /root
-mkdir /wwwroot
-cd /wwwroot
+mkdir /usr/bin/v2ray /etc/v2ray
+curl -L -H "Cache-Control: no-cache" -o /v2ray.zip https://github.com/v2ray/v2ray-core/releases/latest/download/v2ray-linux-64.zip
+touch /etc/v2ray/config.json
+unzip /v2ray.zip -d /usr/bin/v2ray
+rm -rf /v2ray.zip /usr/bin/v2ray/*.sig /usr/bin/v2ray/doc /usr/bin/v2ray/*.json /usr/bin/v2ray/*.dat /usr/bin/v2ray/sys*
 
 wget --no-check-certificate -qO 'demo.tar.gz' "https://github.com/ki8852/v2ray-heroku-undone/raw/master/demo.tar.gz"
 tar xvf demo.tar.gz
 rm -rf demo.tar.gz
 
-cat <<-EOF > /v2raybin/v2ray-$V_VER-linux-$SYS_Bit/config.json
+cat <<-EOF > /etc/v2ray/config.json
 {
-    "log":{
-        "loglevel":"warning"
-    },
-    "inbound":{
+   "inbound":{
         "protocol":"vmess",
-        "listen":"127.0.0.1",
+        "listen":"0.0.0.0",
         "port":2333,
         "settings":{
             "clients":[
                 {
                     "id":"${UUID}",
-                    "level":1,
                     "alterId":${AlterID}
                 }
             ]
@@ -84,20 +68,8 @@ cat <<-EOF > /v2raybin/v2ray-$V_VER-linux-$SYS_Bit/config.json
 }
 EOF
 
-cat <<-EOF > /caddybin/Caddyfile
-http://0.0.0.0:${PORT}
-{
-	root /wwwroot
-	index index.html
-	timeouts none
-	proxy ${V2_Path} localhost:2333 {
-		websocket
-		header_upstream -Origin
-	}
-}
-EOF
 
-cat <<-EOF > /v2raybin/vmess.json 
+cat <<-EOF > /etc/v2ray/vmess.json 
 {
     "v": "2",
     "ps": "${AppName}.herokuapp.com",
@@ -112,18 +84,5 @@ cat <<-EOF > /v2raybin/vmess.json
     "tls": "tls"			
 }
 EOF
+/usr/bin/v2ray/v2ray -config=/etc/v2ray/config.json
 
-if [ "$AppName" = "no" ]; then
-  echo "不生成二维码"
-else
-  mkdir /wwwroot/$V2_QR_Path
-  vmess="vmess://$(cat /v2raybin/vmess.json | base64 -w 0)" 
-  Linkbase64=$(echo -n "${vmess}" | tr -d '\n' | base64 -w 0) 
-  echo "${Linkbase64}" | tr -d '\n' > /wwwroot/$V2_QR_Path/index.html
-  echo -n "${vmess}" | qrencode -s 6 -o /wwwroot/$V2_QR_Path/v2.png
-fi
-
-cd /v2raybin/v2ray-$V_VER-linux-$SYS_Bit
-./v2ray &
-cd /caddybin
-./caddy -conf="Caddyfile"
